@@ -1,0 +1,23 @@
+{
+  "name": "conference-badges-map",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node app.js",
+    "dev": "DEBUG=conference-badges-map:* nodemon babel.js"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.343.0",
+    "cookie-parser": "~1.4.3",
+    "debug": "~2.6.9",
+    "express": "~4.16.0",
+    "http-errors": "~1.6.2",
+    "morgan": "~1.9.0"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-preset-env": "^1.7.0",
+    "babel-register": "^6.26.0",
+    "nodemon": "^1.18.5"
+  }
+}
