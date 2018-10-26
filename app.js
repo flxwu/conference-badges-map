@@ -1,3 +1,4 @@
+import '@babel/polyfill';
 import debug from 'debug';
 debug('conference-badges-map:server');
 import http from 'http';
@@ -6,17 +7,28 @@ import express from 'express';
 import path from 'path';
 // import cookieParser from 'cookie-parser';
 import logger from 'morgan';
+import AWS from 'aws-sdk';
 
 import badgeRouter from './routes/badge';
 
 const app = express();
 app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json({limit: '50mb'}));
+app.use(express.urlencoded({ extended: false, limit: '50mb', parameterLimit: 1000000}));
 // app.use(cookieParser()); Cookies not needed yet
 app.use(express.static(path.join(__dirname, 'frontend/dist')));
 
-app.use('/api/badge', badgeRouter);
+AWS.config.update({ region: 'eu-west-1'});
+const rekognition = new AWS.Rekognition();
+
+// Top-level middleware
+app.use((req, res, next) => {
+  req.debug = debug;
+  next();
+});
+
+app.use('/api/badge', badgeRouter(rekognition));
+
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {
