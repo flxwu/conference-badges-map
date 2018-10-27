@@ -13,21 +13,24 @@ const platform = new H.service.Platform({
 export default {
   name: 'app',
   mounted: function() {
-    const defaultLayers = platform.createDefaultLayers();
+    let defaultLayers = platform.createDefaultLayers();
     // Instantiate (and display) a map object:
-    const map = new H.Map(this.$refs.mapContainer, defaultLayers.normal.map, {
-      zoom: 10,
-      center: { lat: 52.5, lng: 13.4 }
-    });
-    const behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
+    const map = new H.Map(
+      this.$refs.mapContainer,
+      defaultLayers.satellite.panorama,
+      {
+        zoom: 10,
+        center: { lat: 52.5, lng: 13.4 }
+      }
+    );
+    let behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
 
     // Create the default UI components
-    const ui = H.ui.UI.createDefault(map, defaultLayers);
-    map.setBaseLayer(defaultLayers.satellite.panorama);
-    this.addMaker(map);
+    let ui = H.ui.UI.createDefault(map, defaultLayers);
+    this.geocode(map, 'Essen', 'Germany')
   },
   methods: {
-    addMaker: function(map) {
+    addMarker: function(map, { lat, lng }) {
       let outerElement = document.createElement('div'),
         innerElement = document.createElement('div');
 
@@ -67,7 +70,7 @@ export default {
       }
 
       // create dom icon and add/remove opacity listeners
-      var domIcon = new H.map.DomIcon(outerElement, {
+      let domIcon = new H.map.DomIcon(outerElement, {
         // the function is called every time marker enters the viewport
         onAttach: function(clonedElement, domIcon, domMarker) {
           clonedElement.addEventListener('mouseover', changeOpacity);
@@ -80,14 +83,37 @@ export default {
         }
       });
 
-      // Marker for Chicago Bears home
-      var bearsMarker = new H.map.DomMarker(
-        { lat: 41.8625, lng: -87.6166 },
+      // Add Maker
+      let conferenceMarker = new H.map.DomMarker(
+        { lat, lng },
         {
           icon: domIcon
         }
       );
-      map.addObject(bearsMarker);
+      map.addObject(conferenceMarker);
+    },
+    geocode: function(map, city, country) {
+      // Create the parameters for the geocoding request:
+      const geocodingParams = {
+        searchText: `${city}, ${country}`
+      };
+      const that = this;
+
+      // Define a callback function to process the geocoding response:
+      const onResult = function(result) {
+        let locations = result.Response.View[0].Result,
+          position,
+          marker;
+        let lat = locations[0].Location.DisplayPosition.Latitude;
+        let lng = locations[0].Location.DisplayPosition.Longitude;
+        that.addMarker(map, { lat, lng });
+      };
+
+      // Get an instance of the geocoding service:
+      let geocoder = platform.getGeocodingService();
+      geocoder.geocode(geocodingParams, onResult, function(e) {
+        alert(e);
+      });
     }
   }
 };
