@@ -10,12 +10,11 @@ let rekognition = null;
  * POST upload image to get text
  */
 router.post('/upload', (req, res) => {
-  // const encodedImage = req.body.imageb64;
+  const encodedImage = req.body.imageb64;
 
-  const bitmap = fs.readFileSync(
-    '/Users/flxwu/code/websites/conference-badges-map/img.jpg'
-  );
-  const buffer = new Buffer.from(bitmap, 'base64');
+  var base64Image = encodedImage.split("data:image/jpeg;base64,")[1];
+  const buffer = new Buffer(base64Image, 'base64');
+
   let params = {
     Image: {
       Bytes: buffer
