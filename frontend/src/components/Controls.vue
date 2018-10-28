@@ -3,7 +3,7 @@
     <button v-if="!isDialogShown" v-on:click="openScanDialog" id="openScanDialog">
       SCAN BADGE
     </button>
-    <button v-else v-on:click="openScanDialog" id="openScanDialog">
+    <button v-else v-on:click="openScanDialog" id="closeScanDialog">
       X
     </button>
     <dialog v-if="isDialogShown" ref="dialog">
@@ -13,7 +13,7 @@
           <button v-if="isCaptureButtonShown" ref="capture" v-on:click="capture" id="capture">Capture</button>
           <button v-else ref="capture" v-on:click="upload" id="capture">Upload</button>
         </div>
-        <img ref="image" v-if="isCanvasShown" />
+        <img ref="image" />
       </div>
     </dialog>
   </div>
@@ -22,7 +22,6 @@
 <script>
 import axios from 'axios';
 
-let imageSrc;
 let imageb64;
 let captureDevice;
 
@@ -39,20 +38,15 @@ export default {
   updated: function() {
     if (this.isDialogShown) {
       navigator.mediaDevices
-        .getUserMedia({ audio: false, video: { width: 400, height: 400 } })
+        .getUserMedia({
+          audio: false,
+          video: { width: 400, height: 400, facingMode: 'environment' }
+        })
         .then(mediaStream => {
           this.$refs.player.srcObject = mediaStream;
           captureDevice = new ImageCapture(mediaStream.getVideoTracks()[0]);
         })
         .catch(err => console.error(err));
-    }
-
-    if (this.isCanvasShown) {
-      this.$refs.image.src = imageSrc;
-      this.$refs.player.style.display = 'none';
-      this.$refs.player.srcObject
-        .getVideoTracks()
-        .forEach(track => track.stop());
     }
   },
   methods: {
@@ -70,21 +64,27 @@ export default {
           .getVideoTracks()
           .forEach(track => track.stop());
         this.isCanvasShown = false;
+        this.$refs.image.style.display = 'none';
         this.isCaptureButtonShown = true;
-        imageSrc = null;
       }
     },
     capture: function() {
       captureDevice
         .takePhoto()
         .then(blob => {
-          imageSrc = URL.createObjectURL(blob);
+          let imageSrc = URL.createObjectURL(blob);
           const reader = new window.FileReader();
           reader.readAsDataURL(blob);
 
           reader.onloadend = function() {
             imageb64 = reader.result;
           };
+          this.$refs.image.src = imageSrc;
+          this.$refs.image.style.display = 'flex';
+          this.$refs.player.style.display = 'none';
+          this.$refs.player.srcObject
+            .getVideoTracks()
+            .forEach(track => track.stop());
         })
         .catch(error => console.error(error));
       this.isCaptureButtonShown = false;
@@ -112,18 +112,22 @@ video, img
   width: 20rem
   height: 20rem
 
-#openScanDialog
+img
+  display: none
+
+#openScanDialog, #closeScanDialog
   position: absolute
   top: 0
   right: 0
   margin: 24px
   z-index: 2
 
+#closeScanDialog
+  z-index: 3 !important
+
 #dialogContainer
   position: relative
   display: flex
-  > *
-    display: flex
 
 #captureContainer
   position: absolute
