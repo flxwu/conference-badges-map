@@ -13,7 +13,7 @@
           <button v-if="isCaptureButtonShown" ref="capture" v-on:click="capture" id="capture">Capture</button>
           <button v-else ref="capture" v-on:click="upload" id="capture">Upload</button>
         </div>
-        <img ref="image" v-if="isCanvasShown" />
+        <canvas ref="canvas" v-if="isCanvasShown" />
       </div>
     </dialog>
   </div>
@@ -21,10 +21,6 @@
 
 <script>
 import axios from 'axios';
-
-let imageSrc;
-let imageb64;
-let captureDevice;
 
 export default {
   name: 'Controls',
@@ -40,15 +36,38 @@ export default {
     if (this.isDialogShown) {
       navigator.mediaDevices
         .getUserMedia({ audio: false, video: { width: 400, height: 400 } })
-        .then(mediaStream => {
-          this.$refs.player.srcObject = mediaStream;
-          captureDevice = new ImageCapture(mediaStream.getVideoTracks()[0]);
+        .then(stream => {
+          this.$refs.player.srcObject = stream;
         })
-        .catch(err => console.error(err));
+        .catch(err => console.error(err)); // eslint-disable-line no-console
     }
-
+    //TODO: Switch to https://developer.mozilla.org/en-US/docs/Web/API/ImageCapture/takePhoto
     if (this.isCanvasShown) {
-      this.$refs.image.src = imageSrc;
+      const canvas = this.$refs.canvas;
+      const context = canvas.getContext('2d');
+      // step 1
+      const oc = document.createElement('canvas');
+      const octx = oc.getContext('2d');
+      oc.width = 400;
+      oc.height = 400;
+      // steo 2: pre-filter image using steps as radius
+      const steps = 0.5;
+      octx.filter = `blur(${steps}px)`;
+      octx.drawImage(this.$refs.player, 0, 0);
+      // step 3, draw scaled
+      context.drawImage(
+        oc,
+        0,
+        0,
+        oc.width,
+        oc.height,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+
+      this.dataURLstring = this.$refs.canvas.toDataURL();
       this.$refs.player.style.display = 'none';
       this.$refs.player.srcObject
         .getVideoTracks()
@@ -71,29 +90,16 @@ export default {
           .forEach(track => track.stop());
         this.isCanvasShown = false;
         this.isCaptureButtonShown = true;
-        imageSrc = null;
       }
     },
     capture: function() {
-      captureDevice
-        .takePhoto()
-        .then(blob => {
-          imageSrc = URL.createObjectURL(blob);
-          const reader = new window.FileReader();
-          reader.readAsDataURL(blob);
-
-          reader.onloadend = function() {
-            imageb64 = reader.result;
-          };
-        })
-        .catch(error => console.error(error));
       this.isCaptureButtonShown = false;
       this.isCanvasShown = true;
     },
     upload: async function() {
-      console.log(imageb64);
+      const imageURL = this.dataURLstring;
       const apiResponse = await axios.post('/api/badge/upload', {
-        imageb64
+        imageb64: imageURL
       });
       const recognizedText = apiResponse.data;
       console.log(recognizedText);
@@ -108,9 +114,9 @@ export default {
   width: 100%
   height: 100%
 
-video, img
-  width: 20rem
-  height: 20rem
+video, canvas
+  width: 40rem
+  height: 40rem
 
 #openScanDialog
   position: absolute
