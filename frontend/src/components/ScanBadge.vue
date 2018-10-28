@@ -26,7 +26,7 @@ let imageb64;
 let captureDevice;
 
 export default {
-  name: 'Controls',
+  name: 'ScanBadge',
   data: function() {
     return {
       isDialogShown: false,
@@ -91,12 +91,12 @@ export default {
       this.isCanvasShown = true;
     },
     upload: async function() {
-      console.log(imageb64);
+      //TODO: show loader
       const apiResponse = await axios.post('/api/badge/upload', {
         imageb64
       });
       const recognizedText = apiResponse.data;
-      console.log(recognizedText);
+      this.$emit('onScanFinish', recognizedText);
     }
   }
 };
@@ -165,7 +165,6 @@ button
     background-color: #ff7549
 
 dialog
-  position: 
   display: inline-block
   z-index: 2
   width: min-content
