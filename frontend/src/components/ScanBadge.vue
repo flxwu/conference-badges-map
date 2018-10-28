@@ -138,6 +138,19 @@ img
   position: relative
   left: -50%
 
+dialog
+  display: inline-block
+  z-index: 2
+  margin-top: 2rem
+  width: min-content
+  height: min-content
+  background-color: white
+  padding: 15px
+  border-radius: 10px
+  border: none
+</style>
+
+<style lang="sass">
 button
   border-radius: 30px !important
   border-width: 1px
@@ -163,13 +176,5 @@ button
     transition:all 0.3s
   &:hover
     background-color: #ff7549
-
-dialog
-  display: inline-block
-  z-index: 2
-  width: min-content
-  height: min-content
-  background-color: transparent
-  border: none
-
 </style>
+
